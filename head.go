@@ -5,9 +5,10 @@ import "io"
 // Head reads only the n first lines of the given reader.
 //
 // Shell command: `head -n <n>`.
-func (p Pipe) Head(n int) Pipe {
-	p.Out = &head{r: p.Out, n: n}
-	return p
+func (s Stream) Head(n int) Stream {
+	s.stage = "head"
+	s.Reader = &head{r: s, n: n}
+	return s
 }
 
 type head struct {

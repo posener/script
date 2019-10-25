@@ -1,46 +1,47 @@
 package script
 
 import (
+	"fmt"
 	"os/exec"
 )
 
 // Exec executes a command, and pipes its stdout.
-func Exec(command string, args ...string) Pipe {
-	var p Pipe
-	return p.Exec(command, args...)
+// TODO: make command return two streams? one for out and one for err?
+func Exec(command string, args ...string) ErrStream {
+	var s Stream
+	return s.Exec(command, args...)
 }
 
 // Exec executes a command, and pipes its stdout.
 //
 // If the pipe already contains a reader, it will pipe it into the command line.
-func (p Pipe) Exec(command string, args ...string) Pipe {
+// The output is an ErrStream which contains the standard output and standard error of the executed
+// command. Both of them are represented as stream and can be used as streams.
+func (s Stream) Exec(command string, args ...string) ErrStream {
+	s.stage = fmt.Sprintf("exec %v %+v", command, args)
 	cmd := exec.Command(command, args...)
 
 	// pipe previous pipe to stdin if available.
-	if p.Out != nil {
-		cmd.Stdin = p.Out
+	if s.Reader != nil {
+		cmd.Stdin = s.Reader
 	}
 
 	// pipe stdout and stderr to the new pipe.
 	cmdOut, err := cmd.StdoutPipe()
-	p.appendError(err)
-	p.Out = cmdOut
+	s.appendError(err, "pipe stdout")
 
 	cmdErr, err := cmd.StderrPipe()
-	p.appendError(err)
-	p.appendErrorReader(cmdErr)
+	s.appendError(err, "pipe stderr")
 
 	// start the process
 	err = cmd.Start()
-	p.appendError(err)
+	s.appendError(err, "start process")
 
-	p.appendCloser(closerFn(func() error { return cmd.Wait() }))
+	s.appendCloser(closerFn(func() error { return cmd.Wait() }))
 
-	return p
+	return newErrStream(s, cmdOut, cmdErr)
 }
 
 type closerFn func() error
 
-func (f closerFn) Close() error {
-	return f()
-}
+func (f closerFn) Close() error { return f() }

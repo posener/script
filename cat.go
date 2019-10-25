@@ -8,23 +8,21 @@ import (
 // Cat outputs the contents of files.
 //
 // Shell command: cat <path>.
-func Cat(paths ...string) Pipe {
-	var (
-		p       Pipe
-		readers []io.Reader
-	)
+func Cat(paths ...string) Stream {
+	s := Stream{stage: "cat"}
+	var readers []io.Reader
 
 	for _, path := range paths {
 		f, err := os.Open(path)
 		if err != nil {
-			p.appendError(err)
+			s.appendError(err, "open path: %s", path)
 		} else {
 			readers = append(readers, f)
-			p.closers = append(p.closers, f)
+			s.closers = append(s.closers, f)
 		}
 	}
 
-	p.Out = io.MultiReader(readers...)
+	s.Reader = io.MultiReader(readers...)
 
-	return p
+	return s
 }

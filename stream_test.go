@@ -4,5 +4,4 @@ package script
 func Example() {
 	Echo("hello world").ToScreen()
 	// Output: hello world
-	//
 }
