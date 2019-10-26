@@ -25,20 +25,28 @@ import (
 type Stream struct {
 	// Command is the current command of the stream.
 	Command
-	// Parent points to the command before the current command.
-	Parent *Stream
+	// parent points to the command before the current command.
+	parent *Stream
 }
 
+// Stdin startst a stream from stdin.
+func Stdin() Stream {
+	return Stream{Command: command{Reader: os.Stdin, name: "stdin"}}
+}
+
+// PipeFn is a function that returns a command given input reader for that command.
+type PipeFn func(io.Reader) Command
+
 // PipeTo pipes the current stream to a given command and return the new stream.
-func (s Stream) PipeTo(c Command) Stream {
-	return Stream{Command: c, Parent: &s}
+func (s Stream) PipeTo(pipeFn PipeFn) Stream {
+	return Stream{Command: pipeFn(s.Command), parent: &s}
 }
 
 // Close closes all the commands in the current stream and return the errors that occured in all
 // of the commands by invoking the Error() function on each one of them.
 func (s Stream) Close() error {
 	var errors *multierror.Error
-	for cur := &s; cur != nil; cur = cur.Parent {
+	for cur := &s; cur != nil; cur = cur.parent {
 		if err := cur.Command.Error(); err != nil {
 			errors = multierror.Append(errors, err)
 		}

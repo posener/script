@@ -8,7 +8,9 @@ import (
 
 // Count represents the output of `wc` shell command.
 type Count struct {
+	// Stream can be used to pipe the output of wc.
 	Stream
+	// Count the number of lines, words and chars in the input.
 	Lines, Words, Chars int
 }
 
@@ -30,7 +32,7 @@ func (s Stream) Wc() Count {
 		Reader: strings.NewReader(count.String()),
 	}
 	c.appendError(scanner.Err(), "scanning stream")
-	count.Stream = s.PipeTo(c)
+	count.Stream = Stream{Command: c}
 	return count
 }
 

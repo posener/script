@@ -29,10 +29,16 @@ func (m ModifierFn) Modify(line []byte) (modifed []byte, err error) {
 
 // LineFn applies modifier on every line of the input.
 func (s Stream) LineFn(name string, modifier Modifer) Stream {
-	return s.PipeTo(command{
-		name:   name,
-		Reader: &lineFn{r: bufio.NewReader(s.Command), modifier: modifier},
-	})
+	return s.PipeTo(pipeLineFn(name, modifier))
+}
+
+func pipeLineFn(name string, modifier Modifer) PipeFn {
+	return func(stdin io.Reader) Command {
+		return command{
+			name:   name,
+			Reader: &lineFn{r: bufio.NewReader(stdin), modifier: modifier},
+		}
+	}
 }
 
 type lineFn struct {
