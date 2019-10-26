@@ -62,7 +62,7 @@ func TestLineFn(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Echo(tt.input).LineFn(tt.modifier).ToString()
+			got, err := Echo(tt.input).LineFn("name", tt.modifier).ToString()
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -71,7 +71,7 @@ func TestLineFn(t *testing.T) {
 
 func TestLineFn_error(t *testing.T) {
 	t.Parallel()
-	got, err := Echo("a").LineFn(ModifierFn(testErrorModifier)).ToString()
+	got, err := Echo("a").LineFn("name", ModifierFn(testErrorModifier)).ToString()
 	assert.Error(t, err)
 	assert.Equal(t, "", got)
 }

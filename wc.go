@@ -16,19 +16,22 @@ type Count struct {
 //
 // Shell command: `wc`.
 func (s Stream) Wc() Count {
-	s.stage = "wc"
+	defer s.Close()
 
-	defer s.close()
-	c := Count{Stream: s}
-	scanner := bufio.NewScanner(c)
+	var count Count
+	scanner := bufio.NewScanner(s)
 	for scanner.Scan() {
-		c.Lines++
-		c.Chars += len(scanner.Text()) + 1
-		c.Words += countWords(scanner.Text())
+		count.Lines++
+		count.Chars += len(scanner.Text()) + 1
+		count.Words += countWords(scanner.Text())
+	}
+	c := command{
+		name:   "wc",
+		Reader: strings.NewReader(count.String()),
 	}
 	c.appendError(scanner.Err(), "scanning stream")
-	c.Reader = strings.NewReader(c.String())
-	return c
+	count.Stream = s.PipeTo(c)
+	return count
 }
 
 func (c Count) String() string {

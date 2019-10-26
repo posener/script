@@ -9,9 +9,8 @@ import (
 //
 // Shell command: `uniq`.
 func (s Stream) Uniq(writeCountPrefix bool) Stream {
-	s.stage = fmt.Sprintf("uniq %v", writeCountPrefix)
-	s = s.LineFn(&uniq{writeCountPrefix: writeCountPrefix})
-	return s
+	name := fmt.Sprintf("uniq(%v)", writeCountPrefix)
+	return s.LineFn(name, &uniq{writeCountPrefix: writeCountPrefix})
 }
 
 type uniq struct {

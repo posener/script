@@ -28,9 +28,11 @@ func (m ModifierFn) Modify(line []byte) (modifed []byte, err error) {
 }
 
 // LineFn applies modifier on every line of the input.
-func (s Stream) LineFn(modifier Modifer) Stream {
-	s.Reader = &lineFn{r: bufio.NewReader(s.Reader), modifier: modifier}
-	return s
+func (s Stream) LineFn(name string, modifier Modifer) Stream {
+	return s.PipeTo(command{
+		name:   name,
+		Reader: &lineFn{r: bufio.NewReader(s.Command), modifier: modifier},
+	})
 }
 
 type lineFn struct {

@@ -11,14 +11,14 @@ import (
 func TestExec(t *testing.T) {
 	t.Parallel()
 
-	t.Run("Without stdin", func(t *testing.T) {
+	t.Run("without stdin", func(t *testing.T) {
 		stdout, err := Exec("echo", "hello world").ToString()
 
 		require.NoError(t, err)
 		assert.Equal(t, "hello world\n", stdout)
 	})
 
-	t.Run("With stdin", func(t *testing.T) {
+	t.Run("with stdin", func(t *testing.T) {
 		stdout, err := Echo("hello world").Exec("cat").ToString()
 
 		require.NoError(t, err)

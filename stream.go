@@ -9,38 +9,51 @@ package script
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 )
 
-// Stream chains commands in a way that enable piping the output of one command to the other.
+// Stream is a chain of commands: the stdout of one command feeds the following one.
 type Stream struct {
-	// Reader holds the output of the current stream stage.
-	io.Reader
-	// stage holds the name of the current stage.
-	stage string
-	// closers holds all close functions for the chain of commands until this stage.
-	closers []io.Closer
-	// errors hold all the errors of all the chain of commands in the stream.
-	errors *multierror.Error
+	// Command is the current command of the stream.
+	Command
+	// Parent points to the command before the current command.
+	Parent *Stream
 }
 
-// ToScreen pipes the stdout and stderr to screen.
-func (s Stream) ToScreen() error {
-	s.writeAndClose(os.Stdout)
-	return s.error()
+// PipeTo pipes the current stream to a given command and return the new stream.
+func (s Stream) PipeTo(c Command) Stream {
+	return Stream{Command: c, Parent: &s}
 }
 
-// ToString reads stdout and returns it as a string.
+// Close closes all the commands in the current stream and return the errors that occured in all
+// of the commands by invoking the Error() function on each one of them.
+func (s Stream) Close() error {
+	var errors *multierror.Error
+	for cur := &s; cur != nil; cur = cur.Parent {
+		if err := cur.Command.Error(); err != nil {
+			errors = multierror.Append(errors, err)
+		}
+		if err := cur.Command.Close(); err != nil {
+			errors = multierror.Append(errors, err)
+		}
+	}
+	return errors.ErrorOrNil()
+}
+
+// ToScreen pipes the stdout of the stream to screen.
+func (c Stream) ToScreen() error {
+	return writeAndClose(c, os.Stdout)
+}
+
+// ToString reads stdout of the stream and returns it as a string.
 func (s Stream) ToString() (string, error) {
 	var out bytes.Buffer
-	s.writeAndClose(&out)
-	return out.String(), s.error()
+	err := writeAndClose(s, &out)
+	return out.String(), err
 }
 
 // ToFile dumps the output of the stream to a file.
@@ -51,45 +64,22 @@ func (s Stream) ToFile(path string) error {
 	}
 	defer f.Close()
 
-	s.writeAndClose(f)
-	return s.error()
+	return writeAndClose(s, f)
 }
 
 // Discard executes the stream pipeline but discards the output.
 func (s Stream) Discard() error {
-	s.writeAndClose(ioutil.Discard)
-	return s.error()
+	return writeAndClose(s, ioutil.Discard)
 }
 
 // writeAndClose writes the output of the stream to an io.Writer.
-func (s *Stream) writeAndClose(w io.Writer) {
-	_, err := io.Copy(w, s)
-	s.appendError(err, "copy to writer")
-	s.close()
-}
-
-func (s *Stream) close() {
-	for _, c := range s.closers {
-		err := c.Close()
-		s.appendError(err, "closing")
+func writeAndClose(s Stream, w io.Writer) error {
+	var errors *multierror.Error
+	if _, err := io.Copy(w, s); err != nil {
+		errors = multierror.Append(errors, err)
 	}
-}
-
-func (p *Stream) appendCloser(c io.Closer) {
-	if c == nil {
-		return
+	if err := s.Close(); err != nil {
+		errors = multierror.Append(errors, err)
 	}
-	p.closers = append(p.closers, c)
-}
-
-func (s *Stream) appendError(err error, format string, args ...interface{}) {
-	if err == nil {
-		return
-	}
-	err = errors.Wrap(err, s.stage+": "+fmt.Sprintf(format, args...))
-	s.errors = multierror.Append(s.errors, err)
-}
-
-func (s Stream) error() error {
-	return s.errors.ErrorOrNil()
+	return errors.ErrorOrNil()
 }

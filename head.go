@@ -1,14 +1,16 @@
 package script
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 // Head reads only the n first lines of the given reader.
 //
 // Shell command: `head -n <n>`.
 func (s Stream) Head(n int) Stream {
-	s.stage = "head"
 	h := head(n)
-	return s.LineFn(&h)
+	return s.LineFn(fmt.Sprintf("head(%d)", n), &h)
 }
 
 type head int
