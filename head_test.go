@@ -27,9 +27,9 @@ func TestHead(t *testing.T) {
 
 		{src: text2, n: -1, want: ""},
 		{src: text2, n: 0, want: ""},
-		{src: text2, n: 1, want: "a\r\n"},
-		{src: text2, n: 2, want: "a\r\nbb\n"},
-		{src: text2, n: 3, want: "a\r\nbb\n"},
+		{src: text2, n: 1, want: "a\n"},
+		{src: text2, n: 2, want: "a\nbb\n"},
+		{src: text2, n: 3, want: "a\nbb\n"},
 	}
 
 	for _, tt := range tests {

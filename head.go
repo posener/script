@@ -7,28 +7,16 @@ import "io"
 // Shell command: `head -n <n>`.
 func (s Stream) Head(n int) Stream {
 	s.stage = "head"
-	s.Reader = &head{r: s, n: n}
-	return s
+	h := head(n)
+	return s.LineFn(&h)
 }
 
-type head struct {
-	r io.Reader
-	n int
-}
+type head int
 
-func (h *head) Read(p []byte) (n int, err error) {
-	if h.n <= 0 {
-		return 0, io.EOF
+func (n *head) Modify(line []byte) ([]byte, error) {
+	if line == nil || *n <= 0 {
+		return nil, io.EOF
 	}
-
-	n, err = h.r.Read(p)
-	for i := range p[:n] {
-		if p[i] == '\n' {
-			h.n--
-		}
-		if h.n == 0 {
-			return i + 1, io.EOF
-		}
-	}
-	return n, err
+	*n--
+	return append(line, '\n'), nil
 }
