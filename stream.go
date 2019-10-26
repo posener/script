@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 
 	"github.com/hashicorp/go-multierror"
@@ -31,28 +32,42 @@ type Stream struct {
 
 // ToScreen pipes the stdout and stderr to screen.
 func (s Stream) ToScreen() error {
-	s.writeTo(os.Stdout)
-	s.close()
+	s.writeAndClose(os.Stdout)
 	return s.error()
 }
 
 // ToString reads stdout and returns it as a string.
 func (s Stream) ToString() (string, error) {
 	var out bytes.Buffer
-	s.writeTo(&out)
-	s.close()
+	s.writeAndClose(&out)
 	return out.String(), s.error()
 }
 
-// writeTo writes the output of the stream to an io.Writer.
-func (s *Stream) writeTo(w io.Writer) {
-	_, err := io.Copy(w, s)
-	s.appendError(err, "copy to writer")
+// ToFile dumps the output of the stream to a file.
+func (s Stream) ToFile(path string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	s.writeAndClose(f)
+	return s.error()
 }
 
-// close the stream.
-//
-// Should be called after the Reader was readen and should be called only once.
+// Discard executes the stream pipeline but discards the output.
+func (s Stream) Discard() error {
+	s.writeAndClose(ioutil.Discard)
+	return s.error()
+}
+
+// writeAndClose writes the output of the stream to an io.Writer.
+func (s *Stream) writeAndClose(w io.Writer) {
+	_, err := io.Copy(w, s)
+	s.appendError(err, "copy to writer")
+	s.close()
+}
+
 func (s *Stream) close() {
 	for _, c := range s.closers {
 		err := c.Close()
