@@ -40,6 +40,7 @@ func (u *uniq) Modify(line []byte) ([]byte, error) {
 
 	// Remember the line without the '\n' suffix or count prefix.
 	u.last = line
+	u.count = 1
 
 	return out, nil
 }
