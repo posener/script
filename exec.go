@@ -2,22 +2,38 @@ package script
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os/exec"
 )
 
 // Exec executes a command, and pipes its stdout.
-// TODO: make command return two streams? one for out and one for err?
-func Exec(command string, args ...string) ErrStream {
+func Exec(command string, args ...string) Stream {
 	var s Stream
-	return s.Exec(command, args...)
+	return s.exec(nil, command, args...)
+}
+
+// ExecHandleStderr executes a command, and pipes its stdout and enable collecting the stderr of the
+// command.
+func ExecHandleStderr(errWriter io.Writer, command string, args ...string) Stream {
+	var s Stream
+	return s.exec(errWriter, command, args...)
 }
 
 // Exec executes a command, and pipes its stdout.
 //
 // If the pipe already contains a reader, it will pipe it into the command line.
-// The output is an ErrStream which contains the standard output and standard error of the executed
-// command. Both of them are represented as stream and can be used as streams.
-func (s Stream) Exec(command string, args ...string) ErrStream {
+func (s Stream) Exec(command string, args ...string) Stream {
+	return s.exec(nil, command, args...)
+}
+
+// ExecHandleStderr executes a command, and pipes its stdout and enable collecting the stderr of the
+// command.
+func (s Stream) ExecHandleStderr(errWriter io.Writer, command string, args ...string) Stream {
+	return s.exec(errWriter, command, args...)
+}
+
+func (s Stream) exec(errWriter io.Writer, command string, args ...string) Stream {
 	s.stage = fmt.Sprintf("exec %v %+v", command, args)
 	cmd := exec.Command(command, args...)
 
@@ -29,9 +45,12 @@ func (s Stream) Exec(command string, args ...string) ErrStream {
 	// pipe stdout and stderr to the new pipe.
 	cmdOut, err := cmd.StdoutPipe()
 	s.appendError(err, "pipe stdout")
+	s.Reader = cmdOut
 
-	cmdErr, err := cmd.StderrPipe()
-	s.appendError(err, "pipe stderr")
+	if errWriter == nil {
+		errWriter = ioutil.Discard
+	}
+	cmd.Stderr = errWriter
 
 	// start the process
 	err = cmd.Start()
@@ -39,7 +58,7 @@ func (s Stream) Exec(command string, args ...string) ErrStream {
 
 	s.appendCloser(closerFn(func() error { return cmd.Wait() }))
 
-	return newErrStream(s, cmdOut, cmdErr)
+	return s
 }
 
 type closerFn func() error

@@ -1,6 +1,7 @@
 package script
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,41 +12,32 @@ func TestExec(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Without stdin", func(t *testing.T) {
-		stdout, stderr, err := Exec("echo", "hello world").ToString()
+		stdout, err := Exec("echo", "hello world").ToString()
 
 		require.NoError(t, err)
 		assert.Equal(t, "hello world\n", stdout)
-		assert.Equal(t, "", stderr)
 	})
 
 	t.Run("With stdin", func(t *testing.T) {
-		stdout, stderr, err := Echo("hello world").Exec("cat").ToString()
+		stdout, err := Echo("hello world").Exec("cat").ToString()
 
 		require.NoError(t, err)
 		assert.Equal(t, "hello world\n", stdout)
-		assert.Equal(t, "", stderr)
-	})
-
-	t.Run("stderr", func(t *testing.T) {
-		stdout, stderr, err := Exec("cat", "no-such-file").ToString()
-
-		assert.Error(t, err)
-		assert.Equal(t, "", stdout)
-		assert.Equal(t, "cat: no-such-file: No such file or directory\n", stderr)
-	})
-
-	t.Run("stderr only", func(t *testing.T) {
-		stderr, err := Exec("cat", "no-such-file").Err.ToString()
-
-		assert.Error(t, err)
-		assert.Equal(t, "cat: no-such-file: No such file or directory\n", stderr)
 	})
 
 	t.Run("exit code", func(t *testing.T) {
-		stdout, stderr, err := Exec("false").ToString()
+		stdout, err := Exec("false").ToString()
 
 		assert.Error(t, err)
 		assert.Equal(t, "", stdout)
-		assert.Equal(t, "", stderr)
+	})
+
+	t.Run("stderr", func(t *testing.T) {
+		var stderr bytes.Buffer
+		stdout, err := ExecHandleStderr(&stderr, "cat", "no-such-file", "testdata/a.txt").ToString()
+
+		assert.Error(t, err)
+		assert.Equal(t, "a\n", stdout) // Content of testdata/a.txt
+		assert.Equal(t, "cat: no-such-file: No such file or directory\n", stderr.String())
 	})
 }
