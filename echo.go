@@ -6,8 +6,8 @@ import "strings"
 //
 // Shell command: `echo <s>`
 func Echo(s string) Stream {
-	return Stream{Command: command{
-		name:   "echo",
+	return Stream{command: Command{
+		Name:   "echo",
 		Reader: strings.NewReader(s + "\n"),
 	}}
 }

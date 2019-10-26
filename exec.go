@@ -39,7 +39,7 @@ func (s Stream) ExecHandleStderr(errWriter io.Writer, cmd string, args ...string
 
 func pipeExec(errWriter io.Writer, name string, args ...string) PipeFn {
 	return func(stdin io.Reader) Command {
-		c := command{name: fmt.Sprintf("exec(%v, %+v)", name, args)}
+		c := Command{Name: fmt.Sprintf("exec(%v, %+v)", name, args)}
 
 		cmd := exec.Command(name, args...)
 
@@ -50,7 +50,7 @@ func pipeExec(errWriter io.Writer, name string, args ...string) PipeFn {
 
 		// Pipe stdout to the current command output.
 		cmdOut, err := cmd.StdoutPipe()
-		c.appendError(err, "pipe stdout")
+		c.AppendError(err, "pipe stdout")
 		c.Reader = cmdOut
 
 		if errWriter == nil {
@@ -60,7 +60,7 @@ func pipeExec(errWriter io.Writer, name string, args ...string) PipeFn {
 
 		// start the process
 		err = cmd.Start()
-		c.appendError(err, "start process")
+		c.AppendError(err, "start process")
 
 		c.Closer = closerFn(func() error { return cmd.Wait() })
 		return c

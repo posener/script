@@ -27,12 +27,12 @@ func (s Stream) Wc() Count {
 		count.Chars += len(scanner.Text()) + 1
 		count.Words += countWords(scanner.Text())
 	}
-	c := command{
-		name:   "wc",
+	c := Command{
+		Name:   "wc",
 		Reader: strings.NewReader(count.String()),
 	}
-	c.appendError(scanner.Err(), "scanning stream")
-	count.Stream = Stream{Command: c}
+	c.AppendError(scanner.Err(), "scanning stream")
+	count.Stream = Stream{command: c}
 	return count
 }
 

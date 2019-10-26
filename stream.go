@@ -7,9 +7,9 @@
 // * Better representation of errors and stderr.
 //
 // The script chain is represented by the
-// [`Stream`](https://godoc.org/github.com/posener/script#Stream) type. While each command in the
-// stream is abstracted by the [`Command`](https://godoc.org/github.com/posener/script#Command)
-// interface, which enable extending this library freely.
+// (`Stream`) https://godoc.org/github.com/posener/script#Stream type. While each command in the
+// stream is abstracted by the (`Command`) https://godoc.org/github.com/posener/script#Command
+// struct, which enable extending this library freely.
 package script
 
 import (
@@ -24,14 +24,14 @@ import (
 // Stream is a chain of commands: the stdout of one command feeds the following one.
 type Stream struct {
 	// Command is the current command of the stream.
-	Command
+	command Command
 	// parent points to the command before the current command.
 	parent *Stream
 }
 
 // Stdin startst a stream from stdin.
 func Stdin() Stream {
-	return Stream{Command: command{Reader: os.Stdin, name: "stdin"}}
+	return Stream{command: Command{Reader: os.Stdin, Name: "stdin"}}
 }
 
 // PipeFn is a function that returns a command given input reader for that command.
@@ -39,7 +39,19 @@ type PipeFn func(io.Reader) Command
 
 // PipeTo pipes the current stream to a given command and return the new stream.
 func (s Stream) PipeTo(pipeFn PipeFn) Stream {
-	return Stream{Command: pipeFn(s.Command), parent: &s}
+	c := pipeFn(s.command)
+	if c.Reader == nil {
+		panic("a command must contain a reader")
+	}
+	if c.Name == "" {
+		panic("A command must contain a name")
+	}
+	return Stream{command: c, parent: &s}
+}
+
+// Read implements the io.Reader interface.
+func (s Stream) Read(b []byte) (int, error) {
+	return s.command.Read(b)
 }
 
 // Close closes all the commands in the current stream and return the errors that occured in all
@@ -47,10 +59,10 @@ func (s Stream) PipeTo(pipeFn PipeFn) Stream {
 func (s Stream) Close() error {
 	var errors *multierror.Error
 	for cur := &s; cur != nil; cur = cur.parent {
-		if err := cur.Command.Error(); err != nil {
+		if err := cur.command.error(); err != nil {
 			errors = multierror.Append(errors, err)
 		}
-		if err := cur.Command.Close(); err != nil {
+		if err := cur.command.Close(); err != nil {
 			errors = multierror.Append(errors, err)
 		}
 	}

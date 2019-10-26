@@ -34,8 +34,8 @@ func (s Stream) LineFn(name string, modifier Modifer) Stream {
 
 func pipeLineFn(name string, modifier Modifer) PipeFn {
 	return func(stdin io.Reader) Command {
-		return command{
-			name:   name,
+		return Command{
+			Name:   name,
 			Reader: &lineFn{r: bufio.NewReader(stdin), modifier: modifier},
 		}
 	}

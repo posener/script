@@ -11,7 +11,7 @@ import (
 //
 // Shell command: cat <path>.
 func Cat(paths ...string) Stream {
-	c := command{name: "cat"}
+	c := Command{Name: "cat"}
 	var (
 		readers []io.Reader
 		closers multicloser
@@ -20,7 +20,7 @@ func Cat(paths ...string) Stream {
 	for _, path := range paths {
 		f, err := os.Open(path)
 		if err != nil {
-			c.appendError(err, "open path: %s", path)
+			c.AppendError(err, "open path: %s", path)
 		} else {
 			readers = append(readers, f)
 			closers = append(closers, f)
@@ -30,7 +30,7 @@ func Cat(paths ...string) Stream {
 	c.Reader = io.MultiReader(readers...)
 	c.Closer = closers
 
-	return Stream{Command: c}
+	return Stream{command: c}
 }
 
 type multicloser []io.Closer
