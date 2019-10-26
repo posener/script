@@ -10,26 +10,32 @@ import (
 
 var stdin = Stream{Command: command{Reader: os.Stdin, name: "stdin"}}
 
-// Exec executes a command, and pipes its stdout.
+// Exec executes a command and returns a stream of the stdout of the command.
 func Exec(command string, args ...string) Stream {
 	return stdin.exec(nil, command, args...)
 }
 
-// ExecHandleStderr executes a command, and pipes its stdout and enable collecting the stderr of the
-// command.
+// Exec executes a command, returns a stream of the stdout of the command and enable collecting the
+// stderr of the command.
+//
+// If the errWriter is nil, it will be ignored.
+//
+// For example, collecting the stderr to memory can be done by providing a `&bytes.Buffer` as
+// `errWriter`. Writing it to stderr can be done by providing `os.Stderr` as `errWriter`. Logging it
+// to a file can be done by providing an `os.File` as the `errWriter`.
 func ExecHandleStderr(errWriter io.Writer, cmd string, args ...string) Stream {
 	return stdin.exec(errWriter, cmd, args...)
 }
 
-// Exec executes a command, and pipes its stdout.
-//
-// If the pipe already contains a reader, it will pipe it into the command line.
+// Exec executes a command and returns a stream of the stdout of the command.
 func (s Stream) Exec(cmd string, args ...string) Stream {
 	return s.exec(nil, cmd, args...)
 }
 
-// ExecHandleStderr executes a command, and pipes its stdout and enable collecting the stderr of the
-// command.
+// Exec executes a command, returns a stream of the stdout of the command and enable collecting the
+// stderr of the command.
+//
+// If the errWriter is nil, it will be ignored.
 func (s Stream) ExecHandleStderr(errWriter io.Writer, cmd string, args ...string) Stream {
 	return s.exec(errWriter, cmd, args...)
 }
@@ -39,12 +45,12 @@ func (s Stream) exec(errWriter io.Writer, name string, args ...string) Stream {
 
 	cmd := exec.Command(name, args...)
 
-	// pipe previous pipe to stdin if available.
+	// Pipe previous command output to stdin if available.
 	if s.Command != nil {
 		cmd.Stdin = s.Command
 	}
 
-	// pipe stdout and stderr to the new pipe.
+	// Pipe stdout to the current command output.
 	cmdOut, err := cmd.StdoutPipe()
 	c.appendError(err, "pipe stdout")
 	c.Reader = cmdOut
