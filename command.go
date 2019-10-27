@@ -8,11 +8,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Command abstract a single command
+// Command represents a single command in a stream.
+// A valid command must have at least a non-nil `Reader` and not empty `Name`.
 type Command struct {
 	// Reader reads the output of the command.
 	io.Reader
-	// Closer closes the command.
+	// Closer closes the reader of the command.
 	io.Closer
 	// Name is the name of the command.
 	Name string

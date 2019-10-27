@@ -21,7 +21,16 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-// Stream is a chain of commands: the stdout of one command feeds the following one.
+// Stream is a chain of commands: the stdout of each command in the stream feeds the following one.
+// The stream object have different method that allow manipulating it, most of them resemble well
+// known linux commands.
+//
+// If a command which does not exist in this library is required, the `PipeTo` function should be
+// used, which allows constructing a command object from a given input `io.Reader`.
+//
+// The Stream object output can be used to be written to the stdout, to a file or to a string using
+// the `.To*` methods. It also exposes an `io.ReadCloser` interface which allows the user using the
+// stream output for any other usecase.
 type Stream struct {
 	// Command is the current command of the stream.
 	command Command
@@ -37,7 +46,8 @@ func Stdin() Stream {
 // PipeFn is a function that returns a command given input reader for that command.
 type PipeFn func(io.Reader) Command
 
-// PipeTo pipes the current stream to a given command and return the new stream.
+// PipeTo pipes the current stream to a new command and return the new stream. This function should
+// be used to add custom commands that are not available in this library.
 func (s Stream) PipeTo(pipeFn PipeFn) Stream {
 	c := pipeFn(s.command)
 	if c.Reader == nil {
@@ -69,8 +79,8 @@ func (s Stream) Close() error {
 	return errors.ErrorOrNil()
 }
 
-// ToScreen pipes the stdout of the stream to screen.
-func (c Stream) ToScreen() error {
+// ToStdout pipes the stdout of the stream to screen.
+func (c Stream) ToStdout() error {
 	return writeAndClose(c, os.Stdout)
 }
 
