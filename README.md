@@ -7,16 +7,18 @@
 
 Package script provides helper functions to write scripts.
 
-Inspired by [https://github.com/bitfield/script](https://github.com/bitfield/script), with some small modifications:
+Inspired by [https://github.com/bitfield/script](https://github.com/bitfield/script), with some improvements:
 
 * Output between streamed commands is a stream and not loaded to memory.
 
-* Better representation of errors and stderr.
+* Better representation and handling of errors.
 
-The script chain is represented by the
-[`Stream`](https://godoc.org/github.com/posener/script#Stream) type. While each command in the
+* Proper incocation, usage and handling of stderr of custom commands.
+
+The script chain is represented by a
+[`Stream`](https://godoc.org/github.com/posener/script#Stream) object. While each command in the
 stream is abstracted by the [`Command`](https://godoc.org/github.com/posener/script#Command)
-struct, which enable extending this library freely.
+struct. This library provides basic functionality, but can be extended freely.
 
 #### Examples
 
