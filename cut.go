@@ -17,11 +17,11 @@ func (s Stream) Cut(fields ...int) Stream {
 //
 // Shell command: `cut -d<Delim> -f<Fields>`.
 type Cut struct {
-	// Delim is the delimited by which the fields of each line are sparated.
-	Delim []byte
 	// Fileds defines which fields will be collected to the output of the command. The fields are 1
 	// based (first field is 1).
 	Fields []int
+	// Delim is the delimited by which the fields of each line are sparated.
+	Delim []byte
 }
 
 func (c Cut) Modify(line []byte) (modifed []byte, err error) {
@@ -47,5 +47,5 @@ func (c Cut) Modify(line []byte) (modifed []byte, err error) {
 }
 
 func (c Cut) Name() string {
-	return fmt.Sprintf("cut(%v, %v)", c.Delim, c.Fields)
+	return fmt.Sprintf("cut(%v, delim=%v)", c.Fields, c.Delim)
 }
