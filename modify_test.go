@@ -28,7 +28,7 @@ func testErrorModifier(in []byte) ([]byte, error) {
 	return nil, fmt.Errorf("error")
 }
 
-func TestLineFn(t *testing.T) {
+func TestModify(t *testing.T) {
 	t.Parallel()
 	// Create line that is long enough such that it won't be read in a single bufio read-line
 	// of 4096 bytes.
@@ -62,16 +62,16 @@ func TestLineFn(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Echo(tt.input).LineFn("name", tt.modifier).ToString()
+			got, err := Echo(tt.input).Modify(tt.modifier).ToString()
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestLineFn_error(t *testing.T) {
+func TestModify_error(t *testing.T) {
 	t.Parallel()
-	got, err := Echo("a").LineFn("name", ModifierFn(testErrorModifier)).ToString()
+	got, err := Echo("a").Modify(ModifierFn(testErrorModifier)).ToString()
 	assert.Error(t, err)
 	assert.Equal(t, "", got)
 }

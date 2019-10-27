@@ -3,6 +3,7 @@ package script
 import (
 	"bufio"
 	"io"
+	"reflect"
 )
 
 // LineModifier modifies a line.
@@ -18,6 +19,8 @@ type Modifer interface {
 	//
 	// When the returned eof value is true, the Read will return that error.
 	Modify(line []byte) (modifed []byte, err error)
+	// Name returns the name of the command that will represent this modifier.
+	Name() string
 }
 
 // LineModifierFn is a function that modifies a line.
@@ -27,21 +30,25 @@ func (m ModifierFn) Modify(line []byte) (modifed []byte, err error) {
 	return m(line)
 }
 
-// LineFn applies modifier on every line of the input.
-func (s Stream) LineFn(name string, modifier Modifer) Stream {
-	return s.PipeTo(pipeLineFn(name, modifier))
+func (m ModifierFn) Name() string {
+	return reflect.TypeOf(m).Name()
 }
 
-func pipeLineFn(name string, modifier Modifer) PipeFn {
+// Modify applies modifier on every line of the input.
+func (s Stream) Modify(modifier Modifer) Stream {
+	return s.PipeTo(pipeModifier(modifier))
+}
+
+func pipeModifier(m Modifer) PipeFn {
 	return func(stdin io.Reader) Command {
 		return Command{
-			Name:   name,
-			Reader: &lineFn{r: bufio.NewReader(stdin), modifier: modifier},
+			Name:   m.Name(),
+			Reader: &modifier{r: bufio.NewReader(stdin), modifier: m},
 		}
 	}
 }
 
-type lineFn struct {
+type modifier struct {
 	r        *bufio.Reader
 	modifier Modifer
 	// partialOut stores leftover of a line that was not fully read by output.
@@ -49,26 +56,26 @@ type lineFn struct {
 	err        error
 }
 
-func (u *lineFn) Read(out []byte) (n int, err error) {
-	if len(u.partialOut) > 0 {
-		u.partialOut, n = copyBytes(out, u.partialOut)
+func (m *modifier) Read(out []byte) (n int, err error) {
+	if len(m.partialOut) > 0 {
+		m.partialOut, n = copyBytes(out, m.partialOut)
 		return n, nil
 	}
-	if u.err != nil {
-		return 0, u.err
+	if m.err != nil {
+		return 0, m.err
 	}
 
 	// partialIn stores a line that was not fully read from input.
 	var partialIn []byte
 
 	for {
-		line, isPrefix, err := u.r.ReadLine()
+		line, isPrefix, err := m.r.ReadLine()
 		if err != nil {
 			if err != io.EOF {
 				return 0, err
 			}
 			// Remember that we have EOF for next read call.
-			u.err = io.EOF
+			m.err = io.EOF
 		}
 		if len(partialIn) > 0 {
 			line = append(partialIn, line...)
@@ -79,12 +86,12 @@ func (u *lineFn) Read(out []byte) (n int, err error) {
 			continue
 		}
 
-		line, err = u.modifier.Modify(line)
+		line, err = m.modifier.Modify(line)
 		if err != nil {
-			u.err = err
+			m.err = err
 		}
 
-		u.partialOut, n = copyBytes(out, line)
+		m.partialOut, n = copyBytes(out, line)
 		return n, nil
 	}
 }

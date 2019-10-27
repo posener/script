@@ -19,7 +19,7 @@ func (s Stream) Head(n int) Stream {
 		t := make(tail, 0, -n)
 		mod = &t
 	}
-	return s.LineFn(fmt.Sprintf("head(%d)", n), mod)
+	return s.Modify(mod)
 }
 
 type head int
@@ -30,6 +30,10 @@ func (n *head) Modify(line []byte) ([]byte, error) {
 	}
 	*n--
 	return append(line, '\n'), nil
+}
+
+func (n *head) Name() string {
+	return fmt.Sprintf("head(%d)", n)
 }
 
 type tail [][]byte
@@ -50,4 +54,8 @@ func (t *tail) Modify(line []byte) ([]byte, error) {
 	}
 
 	return nil, nil
+}
+
+func (t *tail) Name() string {
+	return fmt.Sprintf("tail(%d)", cap(*t))
 }
