@@ -70,7 +70,10 @@ Echo("1\n2\n3").PipeTo(func(r io.Reader) Command {
 
         // if EOF write sum to output.
         if err == io.EOF {
-            return copy(b, append([]byte(strconv.Itoa(sum)), '\n')), nil
+            return copy(b, append([]byte(strconv.Itoa(sum)), '\n')), io.EOF
+        }
+        if err != nil {
+            return 0, err
         }
 
         // Convert the line to a number and add it to the sum.
