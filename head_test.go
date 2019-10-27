@@ -19,13 +19,17 @@ func TestHead(t *testing.T) {
 		n    int
 		want string
 	}{
-		{src: text, n: -1, want: ""},
+		{src: text, n: -3, want: "a\nbb\n"},
+		{src: text, n: -2, want: "a\nbb\n"},
+		{src: text, n: -1, want: "bb\n"},
 		{src: text, n: 0, want: ""},
 		{src: text, n: 1, want: "a\n"},
 		{src: text, n: 2, want: "a\nbb\n"},
 		{src: text, n: 3, want: "a\nbb\n"},
 
-		{src: text2, n: -1, want: ""},
+		{src: text2, n: -3, want: "a\nbb\n"},
+		{src: text2, n: -2, want: "a\nbb\n"},
+		{src: text2, n: -1, want: "bb\n"},
 		{src: text2, n: 0, want: ""},
 		{src: text2, n: 1, want: "a\n"},
 		{src: text2, n: 2, want: "a\nbb\n"},
