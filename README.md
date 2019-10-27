@@ -14,9 +14,9 @@ Inspired by [https://github.com/bitfield/script](https://github.com/bitfield/scr
 * Better representation of errors and stderr.
 
 The script chain is represented by the
-[`Stream`]([https://godoc.org/github.com/posener/script#Stream](https://godoc.org/github.com/posener/script#Stream)) type. While each command in the
-stream is abstracted by the [`Command`]([https://godoc.org/github.com/posener/script#Command](https://godoc.org/github.com/posener/script#Command))
-interface, which enable extending this library freely.
+[`Stream`](https://godoc.org/github.com/posener/script#Stream) type. While each command in the
+stream is abstracted by the [`Command`](https://godoc.org/github.com/posener/script#Command)
+struct, which enable extending this library freely.
 
 #### Examples
 
