@@ -6,7 +6,8 @@ import (
 	"reflect"
 )
 
-// LineModifier modifies a line.
+// Modifer modifies input lines to output. On each line of the input the Modify method is called,
+// and the modifier can change it, omit it, or break the iteration.
 type Modifer interface {
 	// Modify a line. The input of this function will always be a single line from the input of the
 	// stream, without the trailing '\n'. It should return the output of the stream and should
@@ -23,7 +24,7 @@ type Modifer interface {
 	Name() string
 }
 
-// LineModifierFn is a function that modifies a line.
+// ModifierFn is a function for modifying input lines.
 type ModifierFn func(line []byte) (modifed []byte, err error)
 
 func (m ModifierFn) Modify(line []byte) (modifed []byte, err error) {

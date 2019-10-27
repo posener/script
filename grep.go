@@ -14,6 +14,8 @@ func (s Stream) Grep(re *regexp.Regexp) Stream {
 
 // Grep is a modifier that filters only line that match `Re`. If Invert was set only line that did
 // not match the regex will be returned.
+//
+// Shell command: `grep [-v <Invert>] <Re>`.
 type Grep struct {
 	Re     *regexp.Regexp
 	Invert bool
