@@ -19,6 +19,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/hashicorp/go-multierror"
 )
@@ -42,7 +43,23 @@ type Stream struct {
 
 // Stdin startst a stream from stdin.
 func Stdin() Stream {
-	return Stream{command: Command{Reader: os.Stdin, Name: "stdin"}}
+	return newStream("stdin", os.Stdin)
+}
+
+// Echo writes to stdout.
+//
+// Shell command: `echo <s>`
+func Echo(s string) Stream {
+	return newStream("echo", strings.NewReader(s+"\n"))
+}
+
+// FromReader returns a new stream from a reader.
+func FromReader(r io.Reader) Stream {
+	return newStream("reader", r)
+}
+
+func newStream(name string, r io.Reader) Stream {
+	return Stream{command: Command{Reader: r, Name: name}}
 }
 
 // PipeFn is a function that returns a command given input reader for that command.
@@ -96,6 +113,17 @@ func (s Stream) ToString() (string, error) {
 // ToFile dumps the output of the stream to a file.
 func (s Stream) ToFile(path string) error {
 	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return writeAndClose(s, f)
+}
+
+// AppendFile appends the output of the stream to a file.
+func (s Stream) AppendFile(path string) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return err
 	}

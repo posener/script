@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -82,6 +83,22 @@ func Example_pipeTo() {
 	}).ToStdout()
 
 	// Output: 6
+}
+
+func TestEcho(t *testing.T) {
+	t.Parallel()
+
+	s, err := Echo("hello world").ToString()
+	require.NoError(t, err)
+	assert.Equal(t, "hello world\n", s)
+}
+
+func TestFromReader(t *testing.T) {
+	t.Parallel()
+
+	s, err := FromReader(strings.NewReader("hello world")).ToString()
+	require.NoError(t, err)
+	assert.Equal(t, "hello world", s)
 }
 
 type readerFn func(b []byte) (int, error)
