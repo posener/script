@@ -31,6 +31,13 @@ A simple "hello world" example that creats a stream and pipe it to the stdout.
 Echo("hello world").ToStdout()
 ```
 
+ Output:
+
+```
+hello world
+
+```
+
 ##### Iterate
 
 An example that shows how to iterate scanned lines.
@@ -46,6 +53,15 @@ scanner := bufio.NewScanner(stream)
 for scanner.Scan() {
     fmt.Println(scanner.Text())
 }
+```
+
+ Output:
+
+```
+first
+second
+third
+
 ```
 
 ##### PipeTo
@@ -92,6 +108,13 @@ Echo("1\n2\n3").PipeTo(func(r io.Reader) Command {
 
     return Command{Name: "sum", Reader: readerFn(read)}
 }).ToStdout()
+```
+
+ Output:
+
+```
+6
+
 ```
 
 
