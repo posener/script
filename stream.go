@@ -16,7 +16,6 @@ package script
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -134,7 +133,7 @@ func (s Stream) AppendFile(path string) error {
 		return err
 	}
 
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(path); err != nil {
 		return s.ToFile(path)
 	}
 
