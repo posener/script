@@ -5,11 +5,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"strings"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // A simple "hello world" example that creats a stream and pipe it to the stdout.
@@ -38,10 +33,10 @@ func Example_iterate() {
 	// third
 }
 
-// An example that shows how to create custom commands using the `PipeTo` method with a `PipeFn`
+// An example that shows how to create custom commands using the `Through` method with a `PipeFn`
 // function.
-func Example_pipeTo() {
-	Echo("1\n2\n3").PipeTo(func(r io.Reader) Command {
+func Example_Through() {
+	Echo("1\n2\n3").Through(PipeFn(func(r io.Reader) (io.Reader, error) {
 		// Create a command that sums up all numbers in input.
 		//
 		// In this example we create a reader function such that the whole code will fit into the
@@ -77,26 +72,10 @@ func Example_pipeTo() {
 			return 0, nil
 		}
 
-		return Command{Name: "sum", Reader: readerFn(read)}
-	}).ToStdout()
+		return readerFn(read), nil
+	})).ToStdout()
 
 	// Output: 6
-}
-
-func TestEcho(t *testing.T) {
-	t.Parallel()
-
-	s, err := Echo("hello world").ToString()
-	require.NoError(t, err)
-	assert.Equal(t, "hello world\n", s)
-}
-
-func TestFromReader(t *testing.T) {
-	t.Parallel()
-
-	s, err := FromReader(strings.NewReader("hello world")).ToString()
-	require.NoError(t, err)
-	assert.Equal(t, "hello world", s)
 }
 
 type readerFn func(b []byte) (int, error)

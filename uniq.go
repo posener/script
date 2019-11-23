@@ -14,6 +14,10 @@ func (s Stream) Uniq() Stream {
 
 // Uniq report or omit repeated lines.
 //
+// Usage:
+//
+//  <Stream>.Modify(&Uniq{...})...
+//
 // Shell command: `uniq`.
 type Uniq struct {
 	WriteCount bool

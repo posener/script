@@ -2,6 +2,7 @@ package script
 
 import (
 	"fmt"
+	"github.com/hashicorp/go-multierror"
 	"io"
 	"io/ioutil"
 	"os"
@@ -46,14 +47,14 @@ func Ls(paths ...string) Files {
 	}
 
 	var (
-		command = Command{Name: fmt.Sprintf("ls (%+v)", paths)}
-		files   []FileInfo
+		files  []FileInfo
+		errors *multierror.Error
 	)
 
 	for _, path := range paths {
 		info, err := os.Stat(path)
 		if err != nil {
-			command.AppendError(err, "stat path")
+			errors = multierror.Append(errors, fmt.Errorf("stat path: %s", err))
 			continue
 		}
 
@@ -66,7 +67,7 @@ func Ls(paths ...string) Files {
 		// Path is a directory.
 		infos, err := ioutil.ReadDir(path)
 		if err != nil {
-			command.AppendError(err, "read dir")
+			errors = multierror.Append(errors, fmt.Errorf("read dir: %s", err))
 			continue
 		}
 
@@ -74,11 +75,14 @@ func Ls(paths ...string) Files {
 			files = append(files, FileInfo{Path: filepath.Join(path, info.Name()), FileInfo: info})
 		}
 	}
-	command.Reader = &filesReader{files: files}
 
 	return Files{
-		Stream: Stdin().PipeTo(func(io.Reader) Command { return command }),
-		Files:  files,
+		Stream: Stream{
+			stage: fmt.Sprintf("ls (%+v)", paths),
+			r:     &filesReader{files: files},
+			err:   errors.ErrorOrNil(),
+		},
+		Files: files,
 	}
 }
 

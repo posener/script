@@ -6,9 +6,9 @@ import (
 	"reflect"
 )
 
-// Modifer modifies input lines to output. On each line of the input the Modify method is called,
+// Modifier modifies input lines to output. On each line of the input the Modify method is called,
 // and the modifier can change it, omit it, or break the iteration.
-type Modifer interface {
+type Modifier interface {
 	// Modify a line. The input of this function will always be a single line from the input of the
 	// stream, without the trailing '\n'. It should return the output of the stream and should
 	// append a trailing '\n' if it want it to be a line in the output.
@@ -16,7 +16,7 @@ type Modifer interface {
 	// When EOF of input stream is met, the function will be called once more with a nil line value
 	// to enable output any buffered data.
 	//
-	// When the return modified value is nil, the line will be dicarded.
+	// When the return modified value is nil, the line will be discarded.
 	//
 	// When the returned eof value is true, the Read will return that error.
 	Modify(line []byte) (modifed []byte, err error)
@@ -24,40 +24,40 @@ type Modifer interface {
 	Name() string
 }
 
-// ModifierFn is a function for modifying input lines.
-type ModifierFn func(line []byte) (modifed []byte, err error)
+// ModifyFn is a function for modifying input lines.
+type ModifyFn func(line []byte) (modifed []byte, err error)
 
-func (m ModifierFn) Modify(line []byte) (modifed []byte, err error) {
-	return m(line)
-}
+func (m ModifyFn) Modify(line []byte) (modifed []byte, err error) { return m(line) }
 
-func (m ModifierFn) Name() string {
-	return reflect.TypeOf(m).Name()
-}
+func (m ModifyFn) Name() string { return reflect.TypeOf(m).Name() }
 
 // Modify applies modifier on every line of the input.
-func (s Stream) Modify(modifier Modifer) Stream {
-	return s.PipeTo(pipeModifier(modifier))
+func (s Stream) Modify(modifier Modifier) Stream {
+	return s.Through(modPipe{Modifier: modifier})
 }
 
-func pipeModifier(m Modifer) PipeFn {
-	return func(stdin io.Reader) Command {
-		return Command{
-			Name:   m.Name(),
-			Reader: &modifier{r: bufio.NewReader(stdin), modifier: m},
-		}
-	}
-}
-
-type modifier struct {
-	r        *bufio.Reader
-	modifier Modifer
+// modPipe takes a Modifier and exposes the Pipe interface.
+type modPipe struct {
+	Modifier
+	r *bufio.Reader
 	// partialOut stores leftover of a line that was not fully read by output.
 	partialOut []byte
 	err        error
 }
 
-func (m *modifier) Read(out []byte) (n int, err error) {
+func (m modPipe) Pipe(stdin io.Reader) (io.Reader, error) {
+	m.r = bufio.NewReader(stdin)
+	return &m, nil
+}
+
+func (m modPipe) Close() error {
+	if m.err == io.EOF {
+		return nil
+	}
+	return m.err
+}
+
+func (m *modPipe) Read(out []byte) (n int, err error) {
 	if len(m.partialOut) > 0 {
 		m.partialOut, n = copyBytes(out, m.partialOut)
 		return n, nil
@@ -87,7 +87,7 @@ func (m *modifier) Read(out []byte) (n int, err error) {
 			continue
 		}
 
-		line, err = m.modifier.Modify(line)
+		line, err = m.Modifier.Modify(line)
 		if err != nil {
 			m.err = err
 		}

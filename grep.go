@@ -21,20 +21,20 @@ func (s Stream) Grep(re *regexp.Regexp) Stream {
 //
 // Shell command: `grep [-v <Invert>] <Re>`.
 type Grep struct {
-	Re     *regexp.Regexp
-	Invert bool
+	Re      *regexp.Regexp
+	Inverse bool
 }
 
 func (g Grep) Modify(line []byte) (modifed []byte, err error) {
 	if line == nil {
 		return nil, nil
 	}
-	if g.Re.Match(line) != g.Invert {
+	if g.Re.Match(line) != g.Inverse {
 		return append(line, '\n'), nil
 	}
 	return nil, nil
 }
 
 func (g Grep) Name() string {
-	return fmt.Sprintf("grep(%v, invert=%v)", g.Re, g.Invert)
+	return fmt.Sprintf("grep(%v, invert=%v)", g.Re, g.Inverse)
 }

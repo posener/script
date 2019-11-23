@@ -64,13 +64,13 @@ third
 
 ```
 
-##### PipeTo
+##### Through
 
-An example that shows how to create custom commands using the `PipeTo` method with a `PipeFn`
+An example that shows how to create custom commands using the `Through` method with a `PipeFn`
 function.
 
 ```golang
-Echo("1\n2\n3").PipeTo(func(r io.Reader) Command {
+Echo("1\n2\n3").Through(func(r io.Reader) Command {
     // Create a command that sums up all numbers in input.
     //
     // In this example we create a reader function such that the whole code will fit into the

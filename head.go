@@ -6,56 +6,89 @@ import (
 	"io"
 )
 
-// Head reads only the n first lines of the given reader. If n is a negative number, the last (-n)
-// lines will be returned.
+// Head reads only the n first lines of the given reader. If n is a negative number, all lines
+// besides n first line will be read.
 //
-// Shell command: `head -n <n>` / `tail -n <-n>`.
+// Shell command: `head -n <n>`
 func (s Stream) Head(n int) Stream {
-	var mod Modifer
-	if n >= 0 {
-		h := head(n)
-		mod = &h
-	} else {
-		t := make(tail, 0, -n)
-		mod = &t
+	h := &head{n: n}
+	if n < 0 {
+		h.n = -n
+		h.after = true
 	}
-	return s.Modify(mod)
+	return s.Modify(h)
 }
 
-type head int
+type head struct {
+	n     int
+	after bool
+}
 
-func (n *head) Modify(line []byte) ([]byte, error) {
-	if line == nil || *n <= 0 {
+func (h *head) Modify(line []byte) ([]byte, error) {
+	if line == nil || (h.n == 0 && !h.after) {
 		return nil, io.EOF
 	}
-	*n--
-	return append(line, '\n'), nil
+	print := !h.after || h.n == 0
+	h.n--
+	if print {
+		return append(line, '\n'), nil
+	}
+	return nil, nil
 }
 
-func (n *head) Name() string {
-	return fmt.Sprintf("head(%d)", n)
+func (h *head) Name() string {
+	return fmt.Sprintf("head(%d)", h.n)
 }
 
-type tail [][]byte
+// Tail reads only the n last lines of the given reader. If n is a negative number, all lines
+// besides the last n lines will be read.
+//
+// Shell command: `tail -n <n>`
+func (s Stream) Tail(n int) Stream {
+	t := &tail{n: n}
+	if n < 0 {
+		t.n = -n
+		t.before = true
+	}
+	t.lines = make([][]byte, 0, t.n)
+	return s.Modify(t)
+}
+
+type tail struct {
+	n      int
+	lines  [][]byte
+	buf    bytes.Buffer
+	before bool
+}
 
 func (t *tail) Modify(line []byte) ([]byte, error) {
+	if t.n == 0 {
+		return nil, io.EOF
+	}
 	if line == nil {
-		return append(bytes.Join(*t, []byte{'\n'}), '\n'), io.EOF
+		if t.before {
+			if n := len(t.lines) - t.n; n > 0 {
+				t.lines = t.lines[:n]
+			} else {
+				return nil, io.EOF
+			}
+		}
+		return append(bytes.Join(t.lines, []byte{'\n'}), '\n'), io.EOF
 	}
 
 	// Shift all lines and append the new line.
-	if len(*t) < cap(*t) {
-		*t = append(*t, line)
+	if t.before || len(t.lines) < cap(t.lines) {
+		t.lines = append(t.lines, line)
 	} else {
-		for i := 0; i < len(*t)-1; i++ {
-			(*t)[i] = (*t)[i+1]
+		for i := 0; i < len(t.lines)-1; i++ {
+			t.lines[i] = t.lines[i+1]
 		}
-		(*t)[len(*t)-1] = line
+		t.lines[len(t.lines)-1] = line
 	}
 
 	return nil, nil
 }
 
 func (t *tail) Name() string {
-	return fmt.Sprintf("tail(%d)", cap(*t))
+	return fmt.Sprintf("tail(%d)", t.n)
 }

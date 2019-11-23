@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-// To writes the output of the stream to an io.Writer.
+// To writes the output of the stream to an io.Writer and closes it.
 func (s Stream) To(w io.Writer) error {
 	var errors *multierror.Error
 	if _, err := io.Copy(w, s); err != nil {
@@ -32,6 +32,7 @@ func (s Stream) ToString() (string, error) {
 	var out bytes.Buffer
 	err := s.To(&out)
 	return out.String(), err
+
 }
 
 // ToFile dumps the output of the stream to a file.

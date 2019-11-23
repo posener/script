@@ -17,7 +17,7 @@ func (s Stream) Cut(fields ...int) Stream {
 //
 // Shell command: `cut -d<Delim> -f<Fields>`.
 type Cut struct {
-	// Fileds defines which fields will be collected to the output of the command. The fields are 1
+	// Fields defines which fields will be collected to the output of the command. The fields are 1
 	// based (first field is 1).
 	Fields []int
 	// Delim is the delimited by which the fields of each line are sparated.

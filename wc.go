@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"strings"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 // Count represents the output of `wc` shell command.
@@ -20,19 +22,24 @@ type Count struct {
 func (s Stream) Wc() Count {
 	defer s.Close()
 
-	var count Count
+	var (
+		count  Count
+		errors *multierror.Error
+	)
 	scanner := bufio.NewScanner(s)
 	for scanner.Scan() {
 		count.Lines++
 		count.Chars += len(scanner.Text()) + 1
 		count.Words += countWords(scanner.Text())
 	}
-	c := Command{
-		Name:   "wc",
-		Reader: strings.NewReader(count.String()),
+	if err := scanner.Err(); err != nil {
+		errors = multierror.Append(errors, fmt.Errorf("scanning stream: %s", err))
 	}
-	c.AppendError(scanner.Err(), "scanning stream")
-	count.Stream = Stream{command: c}
+
+	count.Stream = Stream{
+		stage: "wc",
+		r:     strings.NewReader(count.String()),
+	}
 	return count
 }
 

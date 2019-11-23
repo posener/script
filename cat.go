@@ -1,36 +1,39 @@
 package script
 
 import (
+	"fmt"
 	"io"
 	"os"
 
 	"github.com/hashicorp/go-multierror"
 )
 
-// Cat outputs the contents of files.
+// Cat outputs the contents of the given files.
 //
 // Shell command: cat <path>.
 func Cat(paths ...string) Stream {
-	c := Command{Name: "cat"}
 	var (
 		readers []io.Reader
 		closers multicloser
+		errors  *multierror.Error
 	)
 
 	for _, path := range paths {
 		f, err := os.Open(path)
 		if err != nil {
-			c.AppendError(err, "open path: %s", path)
+			errors = multierror.Append(errors, fmt.Errorf("open path %s: %v", path, err))
 		} else {
 			readers = append(readers, f)
 			closers = append(closers, f)
 		}
 	}
 
-	c.Reader = io.MultiReader(readers...)
-	c.Closer = closers
+	return Stream{
+		r:     readcloser{Reader: io.MultiReader(readers...), Closer: closers},
+		stage: "cat",
+		err:   errors.ErrorOrNil(),
+	}
 
-	return Stream{command: c}
 }
 
 type multicloser []io.Closer

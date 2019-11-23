@@ -16,82 +16,91 @@ package script
 
 import (
 	"io"
-	"os"
-	"strings"
+	"reflect"
 
 	"github.com/hashicorp/go-multierror"
 )
 
-// Stream is a chain of commands: the stdout of each command in the stream feeds the following one.
-// The stream object have different method that allow manipulating it, most of them resemble well
-// known linux commands.
+// Stream is a chain of operations on a stream of bytes. The stdout of each operation in the stream
+// feeds the following operation stdin. The stream object have different methods that allow
+// manipulating it, most of them resemble well known linux commands.
 //
-// If a command which does not exist in this library is required, the `PipeTo` function should be
-// used, which allows constructing a command object from a given input `io.Reader`.
+// A custom modifier can be used with the `Through` or with the `Modify` functions.
 //
-// The Stream object output can be used to be written to the stdout, to a file or to a string using
-// the `.To*` methods. It also exposes an `io.ReadCloser` interface which allows the user using the
-// stream output for any other usecase.
+// The stream object is created by some in this library or from any `io.Reader` using the `From`
+// function. It can be dumped using some functions in this library, to a custom reader using the
+// `To` method.
 type Stream struct {
-	// Command is the current command of the stream.
-	command Command
-	// parent points to the command before the current command.
+	// r is the output reader of this stream. If r also implements the `io.Closer` interface, it
+	// will be closed when the stream is closed.
+	r io.Reader
+	// stage is the name of the current stage in the stream.
+	stage string
+	// parent points to the stage before the current stage in the stream.
 	parent *Stream
+	// err contains an error from the current stage in the stream.
+	err error
 }
 
-// Stdin starts a stream from stdin.
-func Stdin() Stream {
-	return From("stdin", os.Stdin)
-}
-
-func From(name string, r io.Reader) Stream {
-	return Stream{command: Command{Reader: r, Name: name}}
-}
-
-// Echo writes to stdout.
-//
-// Shell command: `echo <s>`
-func Echo(s string) Stream {
-	return From("echo", strings.NewReader(s+"\n"))
-}
-
-// FromReader returns a new stream from a reader.
-func FromReader(r io.Reader) Stream {
-	return From("reader", r)
-}
-
-// PipeFn is a function that returns a command given input reader for that command.
-type PipeFn func(io.Reader) Command
-
-// PipeTo pipes the current stream to a new command and return the new stream. This function should
-// be used to add custom commands that are not available in this library.
-func (s Stream) PipeTo(pipeFn PipeFn) Stream {
-	c := pipeFn(s.command)
-	if c.Reader == nil {
-		panic("a command must contain a reader")
-	}
-	if c.Name == "" {
-		panic("A command must contain a name")
-	}
-	return Stream{command: c, parent: &s}
-}
-
-// Read implements the io.Reader interface.
+// Read can be used to read from the stream.
 func (s Stream) Read(b []byte) (int, error) {
-	return s.command.Read(b)
+	return s.r.Read(b)
 }
 
-// Close closes all the commands in the current stream and return the errors that occured in all
-// of the commands by invoking the Error() function on each one of them.
+// Close closes all the stages in the stream and return the errors that occurred in all of the
+// stages.
 func (s Stream) Close() error {
 	var errors *multierror.Error
 	for cur := &s; cur != nil; cur = cur.parent {
-		if err := cur.command.error(); err != nil {
-			errors = multierror.Append(errors, err)
+		if cur.err != nil {
+			errors = multierror.Append(errors, cur.err)
 		}
-		if err := cur.command.Close(); err != nil {
-			errors = multierror.Append(errors, err)
+		if closer, ok := cur.r.(io.Closer); ok {
+			if err := closer.Close(); err != nil {
+				errors = multierror.Append(errors, err)
+			}
 		}
 	}
 	return errors.ErrorOrNil()
+}
+
+// From creates a stream from a reader.
+func From(name string, r io.Reader) Stream {
+	return Stream{stage: name, r: r}
+}
+
+// Through passes the current stream through a pipe. This function can be used to add custom
+// commands that are not available in this library.
+func (s Stream) Through(pipe Pipe) Stream {
+	r, err := pipe.Pipe(s.r)
+	if r == nil {
+		panic("a command must contain a reader")
+	}
+	return Stream{
+		stage:  pipe.Name(),
+		r:      r,
+		err:    err,
+		parent: &s,
+	}
+}
+
+// Pipe reads from a reader and returns another reader.
+type Pipe interface {
+	// Pipe gets a reader and returns another reader. A pipe may return an error and a reader
+	// together.
+	Pipe(stdin io.Reader) (io.Reader, error)
+	// Name of pipe.
+	Name() string
+}
+
+// PipeFn is a function that implements Pipe.
+type PipeFn func(io.Reader) (io.Reader, error)
+
+func (f PipeFn) Pipe(stdin io.Reader) (io.Reader, error) { return f(stdin) }
+
+func (f PipeFn) Name() string { return reflect.TypeOf(f).Name() }
+
+type readcloser struct {
+	io.Reader
+	io.Closer
 }

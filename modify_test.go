@@ -37,24 +37,24 @@ func TestModify(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		modifier Modifer
+		modifier Modifier
 		want     string
 	}{
 		{
 			name:     "simple",
-			modifier: ModifierFn(testModifier),
+			modifier: ModifyFn(testModifier),
 			input:    "a\nb\nc",
 			want:     "@a@\n@b@\n@c@\n",
 		},
 		{
 			name:     "long line correctness",
-			modifier: ModifierFn(testModifier),
+			modifier: ModifyFn(testModifier),
 			input:    longLine + "\n" + longLine,
 			want:     "@" + longLine + "@\n@" + longLine + "@\n",
 		},
 		{
 			name:     "eof handling",
-			modifier: ModifierFn(testEOFModifier),
+			modifier: ModifyFn(testEOFModifier),
 			input:    "a",
 			want:     "",
 		},
@@ -71,7 +71,7 @@ func TestModify(t *testing.T) {
 
 func TestModify_error(t *testing.T) {
 	t.Parallel()
-	got, err := Echo("a").Modify(ModifierFn(testErrorModifier)).ToString()
+	got, err := Echo("a").Modify(ModifyFn(testErrorModifier)).ToString()
 	assert.Error(t, err)
 	assert.Equal(t, "", got)
 }

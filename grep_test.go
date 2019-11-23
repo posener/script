@@ -18,7 +18,7 @@ func TestGrep(t *testing.T) {
 	})
 
 	t.Run("invert", func(t *testing.T) {
-		got, err := Echo("a\nb\na\nc").Modify(Grep{Re: regexp.MustCompile(`^a`), Invert: true}).ToString()
+		got, err := Echo("a\nb\na\nc").Modify(Grep{Re: regexp.MustCompile(`^a`), Inverse: true}).ToString()
 		require.NoError(t, err)
 		assert.Equal(t, "b\nc\n", got)
 	})
