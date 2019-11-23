@@ -36,36 +36,21 @@ func (s Stream) ToString() (string, error) {
 
 // ToFile dumps the output of the stream to a file.
 func (s Stream) ToFile(path string) error {
-	err := makeDir(path)
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(path)
+	f, err := File(path)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-
 	return s.To(f)
 }
 
 // AppendFile appends the output of the stream to a file.
 func (s Stream) AppendFile(path string) error {
-	err := makeDir(path)
-	if err != nil {
-		return err
-	}
-
-	if _, err := os.Stat(path); err != nil {
-		return s.ToFile(path)
-	}
-
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND, 0666)
+	f, err := AppendFile(path)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-
 	return s.To(f)
 }
 
@@ -77,13 +62,31 @@ func (s Stream) ToTempFile() (path string, err error) {
 		return "", err
 	}
 	defer f.Close()
-
 	return f.Name(), s.To(f)
 }
 
 // Discard executes the stream pipeline but discards the output.
 func (s Stream) Discard() error {
 	return s.To(ioutil.Discard)
+}
+
+func File(path string) (io.WriteCloser, error) {
+	err := makeDir(path)
+	if err != nil {
+		return nil, err
+	}
+	return os.Create(path)
+}
+
+func AppendFile(path string) (io.WriteCloser, error) {
+	err := makeDir(path)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := os.Stat(path); err != nil {
+		return File(path)
+	}
+	return os.OpenFile(path, os.O_WRONLY|os.O_APPEND, 0666)
 }
 
 func makeDir(path string) error {

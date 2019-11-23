@@ -8,15 +8,15 @@ import (
 	"path/filepath"
 )
 
-// Files is a stream of a list of files. A user can eigher use the file list directly or the the
+// Files is a stream of a list of files. A user can either use the file list directly or the the
 // created stream. In the stream, each line contains a path to a file.
 type Files struct {
 	Stream
-	Files []File
+	Files []FileInfo
 }
 
 // File contains information about a file.
-type File struct {
+type FileInfo struct {
 	// FileInfo contains information about the file.
 	os.FileInfo
 	// Path is the path of the file. It may be relative or absolute, depending on how the `Ls`
@@ -47,7 +47,7 @@ func Ls(paths ...string) Files {
 
 	var (
 		command = Command{Name: fmt.Sprintf("ls (%+v)", paths)}
-		files   []File
+		files   []FileInfo
 	)
 
 	for _, path := range paths {
@@ -59,7 +59,7 @@ func Ls(paths ...string) Files {
 
 		// Path is a single file.
 		if !info.IsDir() {
-			files = append(files, File{Path: path, FileInfo: info})
+			files = append(files, FileInfo{Path: path, FileInfo: info})
 			continue
 		}
 
@@ -71,7 +71,7 @@ func Ls(paths ...string) Files {
 		}
 
 		for _, info := range infos {
-			files = append(files, File{Path: filepath.Join(path, info.Name()), FileInfo: info})
+			files = append(files, FileInfo{Path: filepath.Join(path, info.Name()), FileInfo: info})
 		}
 	}
 	command.Reader = &filesReader{files: files}
@@ -84,7 +84,7 @@ func Ls(paths ...string) Files {
 
 // filesReader reads from a file info list.
 type filesReader struct {
-	files []File
+	files []FileInfo
 	// seek indicates which file to write for the next Read function call.
 	seek int
 }
