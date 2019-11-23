@@ -16,9 +16,11 @@ package script
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -41,7 +43,7 @@ type Stream struct {
 	parent *Stream
 }
 
-// Stdin startst a stream from stdin.
+// Stdin starts a stream from stdin.
 func Stdin() Stream {
 	return newStream("stdin", os.Stdin)
 }
@@ -112,6 +114,10 @@ func (s Stream) ToString() (string, error) {
 
 // ToFile dumps the output of the stream to a file.
 func (s Stream) ToFile(path string) error {
+	err := makeDir(path)
+	if err != nil {
+		return err
+	}
 	f, err := os.Create(path)
 	if err != nil {
 		return err
@@ -123,6 +129,15 @@ func (s Stream) ToFile(path string) error {
 
 // AppendFile appends the output of the stream to a file.
 func (s Stream) AppendFile(path string) error {
+	err := makeDir(path)
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return s.ToFile(path)
+	}
+
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return err
@@ -130,6 +145,18 @@ func (s Stream) AppendFile(path string) error {
 	defer f.Close()
 
 	return writeAndClose(s, f)
+}
+
+// ToTempFile dumps the output of the stream to a temporary file and returns the temporary files'
+// path.
+func (s Stream) ToTempFile() (path string, err error) {
+	f, err := ioutil.TempFile("", "script-")
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	return f.Name(), writeAndClose(s, f)
 }
 
 // Discard executes the stream pipeline but discards the output.
@@ -147,4 +174,8 @@ func writeAndClose(s Stream, w io.Writer) error {
 		errors = multierror.Append(errors, err)
 	}
 	return errors.ErrorOrNil()
+}
+
+func makeDir(path string) error {
+	return os.MkdirAll(filepath.Dir(path), 0775)
 }
