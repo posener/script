@@ -20,6 +20,16 @@ The script chain is represented by a
 stream is abstracted by the [`Command`](https://godoc.org/github.com/posener/script#Command)
 struct. This library provides basic functionality, but can be extended freely.
 
+## Functions
+
+### func [AppendFile](https://github.com/posener/script/blob/master/to.go#L81)
+
+`func AppendFile(path string) (io.WriteCloser, error)`
+
+### func [File](https://github.com/posener/script/blob/master/to.go#L73)
+
+`func File(path string) (io.WriteCloser, error)`
+
 #### Examples
 
 ##### HelloWorld
