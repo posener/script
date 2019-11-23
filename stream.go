@@ -15,11 +15,8 @@
 package script
 
 import (
-	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -44,23 +41,23 @@ type Stream struct {
 
 // Stdin starts a stream from stdin.
 func Stdin() Stream {
-	return newStream("stdin", os.Stdin)
+	return From("stdin", os.Stdin)
+}
+
+func From(name string, r io.Reader) Stream {
+	return Stream{command: Command{Reader: r, Name: name}}
 }
 
 // Echo writes to stdout.
 //
 // Shell command: `echo <s>`
 func Echo(s string) Stream {
-	return newStream("echo", strings.NewReader(s+"\n"))
+	return From("echo", strings.NewReader(s+"\n"))
 }
 
 // FromReader returns a new stream from a reader.
 func FromReader(r io.Reader) Stream {
-	return newStream("reader", r)
-}
-
-func newStream(name string, r io.Reader) Stream {
-	return Stream{command: Command{Reader: r, Name: name}}
+	return From("reader", r)
 }
 
 // PipeFn is a function that returns a command given input reader for that command.
@@ -97,84 +94,4 @@ func (s Stream) Close() error {
 		}
 	}
 	return errors.ErrorOrNil()
-}
-
-// ToStdout pipes the stdout of the stream to screen.
-func (c Stream) ToStdout() error {
-	return writeAndClose(c, os.Stdout)
-}
-
-// ToString reads stdout of the stream and returns it as a string.
-func (s Stream) ToString() (string, error) {
-	var out bytes.Buffer
-	err := writeAndClose(s, &out)
-	return out.String(), err
-}
-
-// ToFile dumps the output of the stream to a file.
-func (s Stream) ToFile(path string) error {
-	err := makeDir(path)
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	return writeAndClose(s, f)
-}
-
-// AppendFile appends the output of the stream to a file.
-func (s Stream) AppendFile(path string) error {
-	err := makeDir(path)
-	if err != nil {
-		return err
-	}
-
-	if _, err := os.Stat(path); err != nil {
-		return s.ToFile(path)
-	}
-
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	return writeAndClose(s, f)
-}
-
-// ToTempFile dumps the output of the stream to a temporary file and returns the temporary files'
-// path.
-func (s Stream) ToTempFile() (path string, err error) {
-	f, err := ioutil.TempFile("", "script-")
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	return f.Name(), writeAndClose(s, f)
-}
-
-// Discard executes the stream pipeline but discards the output.
-func (s Stream) Discard() error {
-	return writeAndClose(s, ioutil.Discard)
-}
-
-// writeAndClose writes the output of the stream to an io.Writer.
-func writeAndClose(s Stream, w io.Writer) error {
-	var errors *multierror.Error
-	if _, err := io.Copy(w, s); err != nil {
-		errors = multierror.Append(errors, err)
-	}
-	if err := s.Close(); err != nil {
-		errors = multierror.Append(errors, err)
-	}
-	return errors.ErrorOrNil()
-}
-
-func makeDir(path string) error {
-	return os.MkdirAll(filepath.Dir(path), 0775)
 }

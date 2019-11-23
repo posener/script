@@ -4,9 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -123,56 +120,4 @@ func (s sum) Read(b []byte) (int, error) {
 		s.n += i
 	}
 	return 0, nil
-}
-
-func TestToFile(t *testing.T) {
-	t.Parallel()
-
-	dir, err := ioutil.TempDir("", "script")
-	require.NoError(t, err)
-
-	path := filepath.Join(dir, "file")
-
-	err = Echo("hello world").ToFile(path)
-	require.NoError(t, err)
-	defer os.Remove(path)
-
-	got, err := Cat(path).ToString()
-	require.NoError(t, err)
-
-	assert.Equal(t, "hello world\n", got)
-}
-
-func TestAppendFile(t *testing.T) {
-	t.Parallel()
-
-	dir, err := ioutil.TempDir("", "script")
-	require.NoError(t, err)
-
-	path := filepath.Join(dir, "file")
-
-	err = Echo("hello world").AppendFile(path)
-	require.NoError(t, err)
-	defer os.Remove(path)
-
-	err = Echo("hello world").AppendFile(path)
-	require.NoError(t, err)
-
-	got, err := Cat(path).ToString()
-	require.NoError(t, err)
-
-	assert.Equal(t, "hello world\nhello world\n", got)
-}
-
-func TestToTempFile(t *testing.T) {
-	t.Parallel()
-
-	tmp, err := Echo("hello world").ToTempFile()
-	require.NoError(t, err)
-	defer os.Remove(tmp)
-
-	got, err := Cat(tmp).ToString()
-	require.NoError(t, err)
-
-	assert.Equal(t, "hello world\n", got)
 }
