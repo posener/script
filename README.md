@@ -70,7 +70,7 @@ An example that shows how to create custom commands using the `Through` method w
 function.
 
 ```golang
-Echo("1\n2\n3").Through(func(r io.Reader) Command {
+Echo("1\n2\n3").Through(PipeFn(func(r io.Reader) (io.Reader, error) {
     // Create a command that sums up all numbers in input.
     //
     // In this example we create a reader function such that the whole code will fit into the
@@ -106,8 +106,8 @@ Echo("1\n2\n3").Through(func(r io.Reader) Command {
         return 0, nil
     }
 
-    return Command{Name: "sum", Reader: readerFn(read)}
-}).ToStdout()
+    return readerFn(read), nil
+})).ToStdout()
 ```
 
  Output:
