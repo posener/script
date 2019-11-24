@@ -35,7 +35,7 @@ func Example_iterate() {
 
 // An example that shows how to create custom commands using the `Through` method with a `PipeFn`
 // function.
-func Example_Through() {
+func Example_through() {
 	Echo("1\n2\n3").Through(PipeFn(func(r io.Reader) (io.Reader, error) {
 		// Create a command that sums up all numbers in input.
 		//
