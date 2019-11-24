@@ -61,7 +61,7 @@ func (e exe) Pipe(stdin io.Reader) (io.Reader, error) {
 	// Pipe stdout to the current command output.
 	cmdOut, err := cmd.StdoutPipe()
 	if err != nil {
-		errors = multierror.Append(errors, fmt.Errorf("pipe stdout: %w", err))
+		errors = multierror.Append(errors, fmt.Errorf("pipe stdout: %v", err))
 	}
 
 	if e.stderr == nil {
@@ -72,7 +72,7 @@ func (e exe) Pipe(stdin io.Reader) (io.Reader, error) {
 	// start the process
 	err = cmd.Start()
 	if err != nil {
-		errors = multierror.Append(errors, fmt.Errorf("start process: %w", err))
+		errors = multierror.Append(errors, fmt.Errorf("start process: %v", err))
 	}
 	return readcloser{
 		Reader: cmdOut,
