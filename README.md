@@ -1,9 +1,7 @@
 # script
 
-[![Build Status](https://travis-ci.org/posener/script.svg?branch=master)](https://travis-ci.org/posener/script)
 [![codecov](https://codecov.io/gh/posener/script/branch/master/graph/badge.svg)](https://codecov.io/gh/posener/script)
-[![GoDoc](https://godoc.org/github.com/posener/script?status.svg)](http://godoc.org/github.com/posener/script)
-[![goreadme](https://goreadme.herokuapp.com/badge/posener/script.svg)](https://goreadme.herokuapp.com)
+[![GoDoc](https://img.shields.io/badge/pkg.go.dev-doc-blue)](http://pkg.go.dev/github.com/posener/script)
 
 Package script provides helper functions to write scripts.
 
@@ -20,9 +18,9 @@ The script chain is represented by a
 stream is abstracted by the [`Command`](https://godoc.org/github.com/posener/script#Command)
 struct. This library provides basic functionality, but can be extended freely.
 
-#### Examples
+## Examples
 
-##### HelloWorld
+### HelloWorld
 
 A simple "hello world" example that creats a stream and pipe it to the stdout.
 
@@ -35,10 +33,9 @@ Echo("hello world").ToStdout()
 
 ```
 hello world
-
 ```
 
-##### Iterate
+### Iterate
 
 An example that shows how to iterate scanned lines.
 
@@ -61,10 +58,9 @@ for scanner.Scan() {
 first
 second
 third
-
 ```
 
-##### Through
+### Through
 
 An example that shows how to create custom commands using the `Through` method with a `PipeFn`
 function.
@@ -114,10 +110,7 @@ Echo("1\n2\n3").Through(PipeFn(func(r io.Reader) (io.Reader, error) {
 
 ```
 6
-
 ```
 
-
 ---
-
-Created by [goreadme](https://github.com/apps/goreadme)
+Readme created from Go doc with [goreadme](https://github.com/posener/goreadme)
