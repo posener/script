@@ -64,11 +64,6 @@ func (s Stream) Close() error {
 	return errors.ErrorOrNil()
 }
 
-// From creates a stream from a reader.
-func From(name string, r io.Reader) Stream {
-	return Stream{stage: name, r: r}
-}
-
 // Through passes the current stream through a pipe. This function can be used to add custom
 // commands that are not available in this library.
 func (s Stream) Through(pipe Pipe) Stream {

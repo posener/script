@@ -1,6 +1,9 @@
 package script
 
 import (
+	"encoding/json"
+	"errors"
+	"io"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -37,4 +40,17 @@ func TestStdin(t *testing.T) {
 	s, err := Stdin().ToString()
 	require.NoError(t, err)
 	assert.Equal(t, "hello world\n", s)
+}
+
+func TestWriter(t *testing.T) {
+	t.Parallel()
+	got, err := Writer("json", func(w io.Writer) error { return json.NewEncoder(w).Encode("foo") }).ToString()
+	require.NoError(t, err)
+	assert.Equal(t, "\"foo\"\n", got)
+}
+
+func TestWriter_failure(t *testing.T) {
+	t.Parallel()
+	_, err := Writer("fail", func(w io.Writer) error { return errors.New("failed") }).ToString()
+	assert.Error(t, err)
 }
