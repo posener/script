@@ -11,7 +11,7 @@ import (
 
 // Exec executes a command and returns a stream of the stdout of the command.
 func Exec(cmd string, args ...string) Stream {
-	return Stdin().Through(exe{cmd: cmd, args: args})
+	return From("empty", nil).Through(exe{cmd: cmd, args: args})
 }
 
 // ExecHandleStderr executes a command, returns a stream of the stdout of the command and enable
@@ -23,7 +23,7 @@ func Exec(cmd string, args ...string) Stream {
 // `stderr`. Writing it to stderr can be done by providing `os.Stderr` as `stderr`. Logging it
 // to a file can be done by providing an `os.File` as the `stderr`.
 func ExecHandleStderr(stderr io.Writer, cmd string, args ...string) Stream {
-	return Stdin().Through(exe{cmd: cmd, args: args, stderr: stderr})
+	return From("empty", nil).Through(exe{cmd: cmd, args: args, stderr: stderr})
 }
 
 // Exec executes a command and returns a stream of the stdout of the command.
