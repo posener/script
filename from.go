@@ -3,6 +3,7 @@ package script
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -21,7 +22,8 @@ func Writer(name string, writer func(io.Writer) error) Stream {
 
 // Stdin starts a stream from stdin.
 func Stdin() Stream {
-	return From("stdin", os.Stdin)
+	stdin := ioutil.NopCloser(os.Stdin) // Prevent closing of stdin.
+	return From("stdin", stdin)
 }
 
 // Echo writes to stdout.
