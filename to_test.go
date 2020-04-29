@@ -61,3 +61,13 @@ func TestToTempFile(t *testing.T) {
 
 	assert.Equal(t, "hello world\n", got)
 }
+
+func TestIterate(t *testing.T) {
+	t.Parallel()
+	out := []byte{}
+	Echo("a\nb\nc").Iterate(func(l []byte) error {
+		out = append(out, l...)
+		return nil
+	})
+	assert.Equal(t, out, []byte("abc"))
+}

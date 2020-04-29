@@ -22,6 +22,15 @@ func (s Stream) To(w io.Writer) error {
 	return errors.ErrorOrNil()
 }
 
+func (s Stream) Iterate(iterator func(line []byte) error) error {
+	return s.Modify(ModifyFn(func(line []byte) (modifed []byte, err error) {
+		err = iterator(line)
+		return nil, err
+	})).To(ioutil.Discard)
+}
+
+type iterator struct{}
+
 // ToStdout pipes the stdout of the stream to screen.
 func (s Stream) ToStdout() error {
 	return s.To(os.Stdout)
