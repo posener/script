@@ -1,8 +1,10 @@
 package script
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -74,4 +76,17 @@ func TestModify_error(t *testing.T) {
 	got, err := Echo("a").Modify(ModifyFn(testErrorModifier)).ToString()
 	assert.Error(t, err)
 	assert.Equal(t, "", got)
+}
+
+func TestModify_Read_ErrNoProgress(t *testing.T) {
+	t.Parallel()
+	var sb strings.Builder
+	for i := 0; i < 101*2; i++ {
+		sb.WriteString("foo\n")
+	}
+	s := Echo(sb.String()).Grep(regexp.MustCompile("^bar$"))
+	scanner := bufio.NewScanner(s)
+	for scanner.Scan() {
+	}
+	assert.NoError(t, scanner.Err())
 }
