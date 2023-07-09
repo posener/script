@@ -2,34 +2,29 @@ package script
 
 import (
 	"bytes"
+	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	"github.com/hashicorp/go-multierror"
 )
 
 // To writes the output of the stream to an io.Writer and closes it.
-func (s Stream) To(w io.Writer) error {
-	var errors *multierror.Error
+func (s Stream) To(w io.Writer) (merr error) {
 	if _, err := io.Copy(w, s); err != nil {
-		errors = multierror.Append(errors, err)
+		merr = errors.Join(merr, err)
 	}
 	if err := s.Close(); err != nil {
-		errors = multierror.Append(errors, err)
+		merr = errors.Join(merr, err)
 	}
-	return errors.ErrorOrNil()
+	return
 }
 
 func (s Stream) Iterate(iterator func(line []byte) error) error {
 	return s.Modify(ModifyFn(func(line []byte) (modifed []byte, err error) {
 		err = iterator(line)
 		return nil, err
-	})).To(ioutil.Discard)
+	})).To(io.Discard)
 }
-
-type iterator struct{}
 
 // ToStdout pipes the stdout of the stream to screen.
 func (s Stream) ToStdout() error {
@@ -67,7 +62,7 @@ func (s Stream) AppendFile(path string) error {
 // ToTempFile dumps the output of the stream to a temporary file and returns the temporary files'
 // path.
 func (s Stream) ToTempFile() (path string, err error) {
-	f, err := ioutil.TempFile("", "script-")
+	f, err := os.CreateTemp("", "script-")
 	if err != nil {
 		return "", err
 	}
@@ -77,7 +72,7 @@ func (s Stream) ToTempFile() (path string, err error) {
 
 // Discard executes the stream pipeline but discards the output.
 func (s Stream) Discard() error {
-	return s.To(ioutil.Discard)
+	return s.To(io.Discard)
 }
 
 func File(path string) (io.WriteCloser, error) {

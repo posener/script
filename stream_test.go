@@ -83,20 +83,3 @@ type readerFn func(b []byte) (int, error)
 func (f readerFn) Read(b []byte) (int, error) {
 	return f(b)
 }
-
-type sum struct {
-	r *bufio.Reader
-	n int
-}
-
-func (s sum) Read(b []byte) (int, error) {
-	line, _, err := s.r.ReadLine()
-	// if EOF write sum to output.
-	if err == io.EOF {
-		return copy(b, append([]byte(strconv.Itoa(s.n)), '\n')), nil
-	}
-	if i, err := strconv.Atoi(string(line)); err == nil {
-		s.n += i
-	}
-	return 0, nil
-}
