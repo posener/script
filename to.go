@@ -9,14 +9,15 @@ import (
 )
 
 // To writes the output of the stream to an io.Writer and closes it.
-func (s Stream) To(w io.Writer) (merr error) {
+func (s Stream) To(w io.Writer) error {
+	var merr error
 	if _, err := io.Copy(w, s); err != nil {
 		merr = errors.Join(merr, err)
 	}
 	if err := s.Close(); err != nil {
 		merr = errors.Join(merr, err)
 	}
-	return
+	return merr
 }
 
 func (s Stream) Iterate(iterator func(line []byte) error) error {

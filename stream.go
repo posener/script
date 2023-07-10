@@ -48,7 +48,8 @@ func (s Stream) Read(b []byte) (int, error) {
 
 // Close closes all the stages in the stream and return the errors that occurred in all of the
 // stages.
-func (s Stream) Close() (merr error) {
+func (s Stream) Close() error {
+	var merr error
 	for cur := &s; cur != nil; cur = cur.parent {
 		if cur.err != nil {
 			merr = errors.Join(merr, cur.err)
@@ -59,7 +60,7 @@ func (s Stream) Close() (merr error) {
 			}
 		}
 	}
-	return
+	return merr
 }
 
 // Through passes the current stream through a pipe. This function can be used to add custom

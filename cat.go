@@ -36,11 +36,12 @@ func Cat(paths ...string) Stream {
 
 type multicloser []io.Closer
 
-func (mc multicloser) Close() (merr error) {
+func (mc multicloser) Close() error {
+	var merr error
 	for _, c := range mc {
 		if err := c.Close(); err != nil {
 			merr = errors.Join(merr, err)
 		}
 	}
-	return
+	return merr
 }
