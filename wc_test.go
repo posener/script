@@ -1,6 +1,7 @@
 package script
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,5 +29,20 @@ func TestWc(t *testing.T) {
 		assert.Equal(t, 1, wc.Lines)
 		assert.Equal(t, 0, wc.Words)
 		assert.Equal(t, 1, wc.Chars)
+	})
+
+	t.Run("Scanner error", func(t *testing.T) {
+		wc := (&Stream{
+			r: readerFn(func(_ []byte) (int, error) {
+				return 0, fmt.Errorf("oops")
+			}),
+		}).Wc()
+
+		assert.Equal(t, 0, wc.Lines)
+		assert.Equal(t, 0, wc.Words)
+		assert.Equal(t, 0, wc.Chars)
+
+		_, err := wc.ToString()
+		require.Error(t, err, "oops")
 	})
 }
